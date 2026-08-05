@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>FORGE — Gym &amp; Nutrition Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ============ APP SHELL ============ -->
+<div class="app" id="app">
+
+  <!-- ============ SIDEBAR ============ -->
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <div class="brand-mark"><span></span><span></span><span></span></div>
+      <div class="brand-text">FORGE</div>
+    </div>
+
+    <nav class="nav" id="mainNav">
+      <button class="nav-item active" data-page="dashboard"><i data-ic="grid"></i><span>Dashboard</span></button>
+      <button class="nav-item" data-page="exercises"><i data-ic="dumbbell"></i><span>Exercises</span></button>
+      <button class="nav-item" data-page="workout"><i data-ic="flame"></i><span>Workout Tracker</span></button>
+      <button class="nav-item" data-page="pr"><i data-ic="trophy"></i><span>PR Tracker</span></button>
+      <button class="nav-item" data-page="overload"><i data-ic="trend"></i><span>Progressive Overload</span></button>
+      <button class="nav-item" data-page="bodyweight"><i data-ic="scale"></i><span>Body Weight</span></button>
+      <button class="nav-item" data-page="food"><i data-ic="apple"></i><span>Food Tracker</span></button>
+      <button class="nav-item" data-page="foodhistory"><i data-ic="clock"></i><span>Food History</span></button>
+      <button class="nav-item" data-page="workouthistory"><i data-ic="list"></i><span>Workout History</span></button>
+      <button class="nav-item" data-page="calendar"><i data-ic="calendar"></i><span>Calendar</span></button>
+      <button class="nav-item" data-page="stats"><i data-ic="bar"></i><span>Statistics</span></button>
+      <button class="nav-item" data-page="extras"><i data-ic="spark"></i><span>Extras</span></button>
+      <button class="nav-item" data-page="settings"><i data-ic="gear"></i><span>Settings</span></button>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="streak-chip" id="streakChip">
+        <i data-ic="fire"></i>
+        <div><b id="streakCount">0</b><span>day streak</span></div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ============ MOBILE TOPBAR ============ -->
+  <header class="topbar">
+    <button class="icon-btn" id="menuToggle"><i data-ic="menu"></i></button>
+    <div class="brand-text small">FORGE</div>
+    <button class="icon-btn" id="searchToggle"><i data-ic="search"></i></button>
+  </header>
+
+  <div class="scrim" id="scrim"></div>
+
+  <!-- ============ MAIN CONTENT ============ -->
+  <main class="content">
+
+    <div class="topbar-desktop">
+      <div class="page-title" id="pageTitle">Dashboard</div>
+      <div class="topbar-actions">
+        <div class="global-search">
+          <i data-ic="search"></i>
+          <input type="text" id="globalSearch" placeholder="Search exercises, foods, dates, notes… (press /)">
+          <div class="search-results" id="searchResults"></div>
+        </div>
+        <button class="unit-toggle" id="unitToggle">KG</button>
+        <button class="icon-btn theme-btn" id="themeToggle"><i data-ic="moon"></i></button>
+      </div>
+    </div>
+
+    <!-- ============ DASHBOARD ============ -->
+    <section class="page active" id="page-dashboard">
+      <div class="grid stats-grid">
+        <div class="card stat-card">
+          <div class="stat-ring" data-accent="violet"><i data-ic="dumbbell"></i></div>
+          <div class="stat-body"><span class="stat-label">Total Workouts</span><span class="stat-value" id="statWorkouts">0</span></div>
+        </div>
+        <div class="card stat-card">
+          <div class="stat-ring" data-accent="cyan"><i data-ic="scale"></i></div>
+          <div class="stat-body"><span class="stat-label">Current Weight</span><span class="stat-value" id="statWeight">—</span></div>
+        </div>
+        <div class="card stat-card">
+          <div class="stat-ring" data-accent="green"><i data-ic="list"></i></div>
+          <div class="stat-body"><span class="stat-label">Total Exercises</span><span class="stat-value" id="statExercises">0</span></div>
+        </div>
+        <div class="card stat-card">
+          <div class="stat-ring" data-accent="amber"><i data-ic="trophy"></i></div>
+          <div class="stat-body"><span class="stat-label">Total PRs</span><span class="stat-value" id="statPRs">0</span></div>
+        </div>
+        <div class="card stat-card">
+          <div class="stat-ring" data-accent="rose"><i data-ic="apple"></i></div>
+          <div class="stat-body"><span class="stat-label">Calories Today</span><span class="stat-value" id="statCalories">0</span></div>
+        </div>
+        <div class="card stat-card">
+          <div class="stat-ring" data-accent="fire"><i data-ic="fire"></i></div>
+          <div class="stat-body"><span class="stat-label">Current Streak</span><span class="stat-value" id="statStreak">0</span></div>
+        </div>
+      </div>
+
+      <div class="grid two-col">
+        <div class="card chart-card">
+          <div class="card-head"><h3>Weight Trend</h3><span class="muted" id="weightTrendRange">Last 30 entries</span></div>
+          <canvas id="dashWeightChart" height="160"></canvas>
+        </div>
+        <div class="card chart-card">
+          <div class="card-head"><h3>Weekly Workout Summary</h3><span class="muted" id="weekRangeLabel"></span></div>
+          <canvas id="weeklySummaryChart" height="160"></canvas>
+        </div>
+      </div>
+
+      <div class="grid two-col">
+        <div class="card">
+          <div class="card-head"><h3>Recent Activity</h3></div>
+          <div class="activity-list" id="recentActivity"></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h3>Today's Nutrition</h3></div>
+          <div class="macro-bars" id="dashMacroBars"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ EXERCISES ============ -->
+    <section class="page" id="page-exercises">
+      <div class="toolbar">
+        <div class="chip-filters" id="muscleFilters"></div>
+        <button class="btn btn-primary" id="addExerciseBtn"><i data-ic="plus"></i> Add Exercise</button>
+      </div>
+      <div class="grid cards-grid" id="exerciseGrid"></div>
+    </section>
+
+    <!-- ============ WORKOUT TRACKER ============ -->
+    <section class="page" id="page-workout">
+      <div class="card workout-builder">
+        <div class="card-head"><h3>Log a Workout</h3></div>
+        <div class="form-row">
+          <div class="field">
+            <label>Date</label>
+            <input type="date" id="workoutDate">
+          </div>
+          <div class="field grow">
+            <label>Add Exercise</label>
+            <select id="workoutExerciseSelect"><option value="">Select exercise…</option></select>
+          </div>
+          <button class="btn btn-secondary" id="addWorkoutExerciseBtn"><i data-ic="plus"></i> Add</button>
+        </div>
+        <div id="workoutExerciseList" class="workout-exercise-list"></div>
+        <div class="form-row">
+          <div class="field grow">
+            <label>Workout Notes</label>
+            <input type="text" id="workoutNotes" placeholder="How did it feel?">
+          </div>
+        </div>
+        <div class="workout-summary-bar" id="workoutSummaryBar">
+          <div><span>Total Volume</span><b id="wSumVolume">0</b></div>
+          <div><span>Top Weight</span><b id="wSumTop">0</b></div>
+          <div><span>Est. 1RM (best)</span><b id="wSumOneRM">0</b></div>
+        </div>
+        <button class="btn btn-primary btn-block" id="saveWorkoutBtn"><i data-ic="check"></i> Save Workout</button>
+      </div>
+    </section>
+
+    <!-- ============ PR TRACKER ============ -->
+    <section class="page" id="page-pr">
+      <div class="grid two-col">
+        <div class="card"><div class="card-head"><h3>PR Improvements</h3></div><canvas id="prChart" height="180"></canvas></div>
+        <div class="card"><div class="card-head"><h3>Latest Records</h3></div><div id="prLatestList" class="activity-list"></div></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><h3>All Personal Records</h3></div>
+        <div class="table-wrap"><table class="data-table" id="prTable">
+          <thead><tr><th>Exercise</th><th>Previous PR</th><th>New PR</th><th>Improvement</th><th>Date</th></tr></thead>
+          <tbody></tbody>
+        </table></div>
+      </div>
+    </section>
+
+    <!-- ============ PROGRESSIVE OVERLOAD ============ -->
+    <section class="page" id="page-overload">
+      <div class="toolbar">
+        <div class="field grow">
+          <select id="overloadExerciseSelect"><option value="">Select exercise…</option></select>
+        </div>
+      </div>
+      <div class="grid two-col">
+        <div class="card"><div class="card-head"><h3>Weight Over Time</h3></div><canvas id="overloadWeightChart" height="180"></canvas></div>
+        <div class="card"><div class="card-head"><h3>Volume Over Time</h3></div><canvas id="overloadVolumeChart" height="180"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><h3>Session Comparison</h3></div>
+        <div id="overloadCompare" class="overload-compare"></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><h3>All Exercises — Trend</h3></div>
+        <div class="table-wrap"><table class="data-table" id="overloadTable">
+          <thead><tr><th>Exercise</th><th>Last Session</th><th>Previous Session</th><th>Weight Δ</th><th>Reps Δ</th><th>Volume Δ</th></tr></thead>
+          <tbody></tbody>
+        </table></div>
+      </div>
+    </section>
+
+    <!-- ============ BODY WEIGHT ============ -->
+    <section class="page" id="page-bodyweight">
+      <div class="grid stats-grid four">
+        <div class="card mini-stat"><span>Current</span><b id="bwCurrent">—</b></div>
+        <div class="card mini-stat"><span>Starting</span><b id="bwStart">—</b></div>
+        <div class="card mini-stat"><span>Goal</span><b id="bwGoal">—</b></div>
+        <div class="card mini-stat"><span>Weekly Avg</span><b id="bwWeekAvg">—</b></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><h3>Trend</h3><span class="muted" id="bwMonthAvg"></span></div>
+        <canvas id="bwChart" height="170"></canvas>
+      </div>
+      <div class="card">
+        <div class="card-head"><h3>Log Entry</h3></div>
+        <div class="form-row">
+          <div class="field"><label>Date</label><input type="date" id="bwDate"></div>
+          <div class="field"><label>Weight</label><input type="number" step="0.1" id="bwWeightInput" placeholder="0.0"></div>
+          <div class="field"><label>Goal Weight</label><input type="number" step="0.1" id="bwGoalInput" placeholder="0.0"></div>
+          <button class="btn btn-primary" id="saveBwBtn"><i data-ic="plus"></i> Log</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head"><h3>History</h3></div>
+        <div class="table-wrap"><table class="data-table" id="bwTable"><thead><tr><th>Date</th><th>Weight</th><th>Change</th><th></th></tr></thead><tbody></tbody></table></div>
+      </div>
+    </section>
+
+    <!-- ============ FOOD TRACKER ============ -->
+    <section class="page" id="page-food">
+      <div class="card">
+        <div class="card-head"><h3>Add Food — <span id="foodDateLabel"></span></h3><input type="date" id="foodDate"></div>
+        <div class="form-row">
+          <div class="field grow">
+            <label>Search Food (USDA database)</label>
+            <input type="text" id="foodSearchInput" placeholder="e.g. chicken breast, rice, banana…">
+            <div class="search-results" id="foodSearchResults"></div>
+          </div>
+          <button class="btn btn-secondary" id="manualFoodBtn"><i data-ic="plus"></i> Add Manually</button>
+        </div>
+        <div class="hint" id="foodApiHint"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h3>Daily Goal Progress</h3></div>
+        <div class="macro-bars" id="foodMacroBars"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h3>Logged Foods</h3><b id="foodDayTotal"></b></div>
+        <div class="table-wrap"><table class="data-table" id="foodLogTable">
+          <thead><tr><th>Food</th><th>Qty</th><th>Cal</th><th>Protein</th><th>Carbs</th><th>Fat</th><th></th></tr></thead>
+          <tbody></tbody>
+        </table></div>
+      </div>
+    </section>
+
+    <!-- ============ FOOD HISTORY ============ -->
+    <section class="page" id="page-foodhistory">
+      <div class="toolbar">
+        <div class="chip-filters" id="foodHistoryFilters">
+          <button class="chip active" data-range="today">Today</button>
+          <button class="chip" data-range="yesterday">Yesterday</button>
+          <button class="chip" data-range="week">This Week</button>
+          <button class="chip" data-range="month">This Month</button>
+          <button class="chip" data-range="date">Specific Date</button>
+        </div>
+        <input type="date" id="foodHistoryDate" style="display:none">
+      </div>
+      <div class="grid stats-grid four">
+        <div class="card mini-stat"><span>Calories</span><b id="fhCalories">0</b></div>
+        <div class="card mini-stat"><span>Protein</span><b id="fhProtein">0g</b></div>
+        <div class="card mini-stat"><span>Carbs</span><b id="fhCarbs">0g</b></div>
+        <div class="card mini-stat"><span>Fat</span><b id="fhFat">0g</b></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><h3>Entries</h3></div>
+        <div id="foodHistoryList" class="activity-list"></div>
+      </div>
+    </section>
+
+    <!-- ============ WORKOUT HISTORY ============ -->
+    <section class="page" id="page-workouthistory">
+      <div class="toolbar">
+        <div class="chip-filters" id="workoutHistoryFilters">
+          <button class="chip active" data-range="today">Today</button>
+          <button class="chip" data-range="yesterday">Yesterday</button>
+          <button class="chip" data-range="week">This Week</button>
+          <button class="chip" data-range="month">This Month</button>
+          <button class="chip" data-range="date">Specific Date</button>
+          <button class="chip" data-range="all">All Time</button>
+        </div>
+        <input type="date" id="workoutHistoryDate" style="display:none">
+      </div>
+      <div class="workout-history-list" id="workoutHistoryList"></div>
+    </section>
+
+    <!-- ============ CALENDAR ============ -->
+    <section class="page" id="page-calendar">
+      <div class="card">
+        <div class="calendar-head">
+          <button class="icon-btn" id="calPrev"><i data-ic="chevleft"></i></button>
+          <h3 id="calMonthLabel"></h3>
+          <button class="icon-btn" id="calNext"><i data-ic="chevright"></i></button>
+        </div>
+        <div class="calendar-grid" id="calendarGrid"></div>
+      </div>
+    </section>
+
+    <!-- ============ STATISTICS ============ -->
+    <section class="page" id="page-stats">
+      <div class="grid two-col">
+        <div class="card"><div class="card-head"><h3>Weight Progress</h3></div><canvas id="statWeightChart" height="180"></canvas></div>
+        <div class="card"><div class="card-head"><h3>Calories (14 days)</h3></div><canvas id="statCalorieChart" height="180"></canvas></div>
+      </div>
+      <div class="grid two-col">
+        <div class="card"><div class="card-head"><h3>Workout Volume</h3></div><canvas id="statVolumeChart" height="180"></canvas></div>
+        <div class="card"><div class="card-head"><h3>Exercise Frequency</h3></div><canvas id="statFreqChart" height="180"></canvas></div>
+      </div>
+      <div class="grid two-col">
+        <div class="card"><div class="card-head"><h3>PR Improvements</h3></div><canvas id="statPRChart" height="180"></canvas></div>
+        <div class="card"><div class="card-head"><h3>Weekly Consistency</h3></div><canvas id="statConsistencyChart" height="180"></canvas></div>
+      </div>
+    </section>
+
+    <!-- ============ EXTRAS ============ -->
+    <section class="page" id="page-extras">
+      <div class="grid two-col">
+        <div class="card">
+          <div class="card-head"><h3>Rest Timer</h3></div>
+          <div class="timer-display" id="restTimerDisplay">01:30</div>
+          <div class="form-row">
+            <button class="btn btn-secondary timer-preset" data-sec="30">30s</button>
+            <button class="btn btn-secondary timer-preset" data-sec="60">60s</button>
+            <button class="btn btn-secondary timer-preset" data-sec="90">90s</button>
+            <button class="btn btn-secondary timer-preset" data-sec="180">3m</button>
+          </div>
+          <div class="form-row">
+            <button class="btn btn-primary" id="restTimerStart"><i data-ic="play"></i> Start</button>
+            <button class="btn btn-secondary" id="restTimerReset"><i data-ic="reset"></i> Reset</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h3>Workout Timer (Stopwatch)</h3></div>
+          <div class="timer-display" id="workoutTimerDisplay">00:00:00</div>
+          <div class="form-row">
+            <button class="btn btn-primary" id="workoutTimerStart"><i data-ic="play"></i> Start</button>
+            <button class="btn btn-secondary" id="workoutTimerPause"><i data-ic="pause"></i> Pause</button>
+            <button class="btn btn-secondary" id="workoutTimerReset"><i data-ic="reset"></i> Reset</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid two-col">
+        <div class="card">
+          <div class="card-head"><h3>BMI Calculator</h3></div>
+          <div class="form-row">
+            <div class="field"><label>Height (cm)</label><input type="number" id="bmiHeight" placeholder="175"></div>
+            <div class="field"><label>Weight (kg)</label><input type="number" id="bmiWeight" placeholder="75"></div>
+            <button class="btn btn-primary" id="bmiCalcBtn">Calculate</button>
+          </div>
+          <div class="bmi-result" id="bmiResult"></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h3>Daily Water Tracker</h3><span class="muted" id="waterDateLabel"></span></div>
+          <div class="water-tracker" id="waterTracker"></div>
+          <div class="water-total"><b id="waterTotal">0</b> / <span id="waterGoalLabel">8</span> cups</div>
+        </div>
+      </div>
+
+      <div class="grid two-col">
+        <div class="card">
+          <div class="card-head"><h3>Habit Tracker</h3></div>
+          <div class="form-row">
+            <input type="text" id="newHabitInput" placeholder="New habit name…">
+            <button class="btn btn-secondary" id="addHabitBtn"><i data-ic="plus"></i></button>
+          </div>
+          <div id="habitList" class="habit-list"></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h3>Sleep Tracker</h3></div>
+          <div class="form-row">
+            <div class="field"><label>Date</label><input type="date" id="sleepDate"></div>
+            <div class="field"><label>Hours Slept</label><input type="number" step="0.25" id="sleepHours" placeholder="7.5"></div>
+            <button class="btn btn-primary" id="saveSleepBtn"><i data-ic="plus"></i> Log</button>
+          </div>
+          <canvas id="sleepChart" height="140"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ SETTINGS ============ -->
+    <section class="page" id="page-settings">
+      <div class="card">
+        <div class="card-head"><h3>Appearance</h3></div>
+        <div class="settings-row">
+          <span>Theme</span>
+          <div class="segmented" id="themeSegment">
+            <button data-theme="dark" class="active">Dark</button>
+            <button data-theme="light">Light</button>
+          </div>
+        </div>
+        <div class="settings-row">
+          <span>Weight Unit</span>
+          <div class="segmented" id="unitSegment">
+            <button data-unit="kg" class="active">KG</button>
+            <button data-unit="lbs">LBS</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h3>Goals</h3></div>
+        <div class="form-row">
+          <div class="field"><label>Daily Calorie Goal</label><input type="number" id="settingCalorieGoal"></div>
+          <div class="field"><label>Protein Goal (g)</label><input type="number" id="settingProteinGoal"></div>
+          <div class="field"><label>Carb Goal (g)</label><input type="number" id="settingCarbGoal"></div>
+          <div class="field"><label>Fat Goal (g)</label><input type="number" id="settingFatGoal"></div>
+          <div class="field"><label>Water Goal (cups)</label><input type="number" id="settingWaterGoal"></div>
+        </div>
+        <button class="btn btn-primary" id="saveGoalsBtn">Save Goals</button>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h3>Notifications</h3></div>
+        <div class="settings-row">
+          <span>Remind me about missed workouts</span>
+          <label class="switch"><input type="checkbox" id="missedWorkoutToggle"><span></span></label>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h3>Data Management</h3></div>
+        <div class="form-row">
+          <button class="btn btn-secondary" id="exportBtn"><i data-ic="download"></i> Export JSON</button>
+          <button class="btn btn-secondary" id="importBtn"><i data-ic="upload"></i> Import JSON</button>
+          <input type="file" id="importFile" accept="application/json" style="display:none">
+          <button class="btn btn-danger" id="resetBtn"><i data-ic="trash"></i> Reset All Data</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h3>Keyboard Shortcuts</h3></div>
+        <div class="shortcut-list">
+          <div><kbd>/</kbd> Focus search</div>
+          <div><kbd>G</kbd> then <kbd>D</kbd> Go to Dashboard</div>
+          <div><kbd>N</kbd> New workout</div>
+          <div><kbd>Esc</kbd> Close modal</div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- ============ MODAL ROOT ============ -->
+<div class="modal-backdrop" id="modalBackdrop">
+  <div class="modal" id="modalRoot"></div>
+</div>
+
+<div class="toast-stack" id="toastStack"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>
