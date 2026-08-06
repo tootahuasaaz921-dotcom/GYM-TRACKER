@@ -863,7 +863,22 @@ function getPriorMaxWeight(exerciseId){
    ============================================================ */
 let prChartInst=null;
 
+function populatePRExerciseSelect(){
+  const sel = $('#prExerciseSelect');
+  const prevVal = sel.value;
+  // only list exercises that actually have at least one PR logged
+  const exIds = [...new Set(store.prs.map(p=>p.exerciseId))];
+  const exList = exIds
+    .map(id=> store.exercises.find(e=>e.id===id) || {id, name: (store.prs.find(p=>p.exerciseId===id)||{}).exerciseName || 'Unknown'})
+    .sort((a,b)=> a.name.localeCompare(b.name));
+  sel.innerHTML = `<option value="">All Exercises (PR count)</option>` +
+    exList.map(e=> `<option value="${e.id}">${escapeHtml(e.name)}</option>`).join('');
+  if(exIds.includes(prevVal)) sel.value = prevVal;
+}
+$('#prExerciseSelect').addEventListener('change', renderPRPage);
+
 function renderPRPage(){
+  populatePRExerciseSelect();
   const sorted = [...store.prs].sort((a,b)=> b.date.localeCompare(a.date) || String(b.id).localeCompare(String(a.id)));
 
   const latestWrap = $('#prLatestList');
@@ -888,18 +903,36 @@ function renderPRPage(){
     </tr>`;
   }).join('') : `<tr><td colspan="5" class="empty-state">No records yet</td></tr>`;
 
-  // chart: PR count / improvement over recent months
-  const byMonth = {};
-  sorted.forEach(p=>{
-    const m = p.date.slice(0,7);
-    byMonth[m] = (byMonth[m]||0)+1;
-  });
-  const months = Object.keys(byMonth).sort().slice(-8);
   const ctx = $('#prChart');
   if(prChartInst) prChartInst.destroy();
-  prChartInst = new Chart(ctx, barChartConfig(months.map(m=>{
-    const [y,mo] = m.split('-'); return new Date(y,mo-1,1).toLocaleDateString(undefined,{month:'short',year:'2-digit'});
-  }), months.map(m=>byMonth[m]), 'PRs', '#fbbf24'));
+
+  const selectedExId = $('#prExerciseSelect').value;
+
+  if(selectedExId){
+    // exercise-specific trend: date on X, weight lifted (that PR's new weight) on Y
+    const exPRs = [...store.prs]
+      .filter(p=>p.exerciseId===selectedExId)
+      .sort((a,b)=> a.date.localeCompare(b.date));
+    const exName = exPRs.length ? exPRs[0].exerciseName : (store.exercises.find(e=>e.id===selectedExId)||{}).name || '';
+    $('#prChartTitle').textContent = `${exName} — Weight Trend`;
+    const labels = exPRs.map(p=> fmtDateShort(p.date));
+    const data = exPRs.map(p=> toDisplayWeight(p.newPR));
+    prChartInst = new Chart(ctx, lineChartConfig(labels, data, `Weight (${unitLabel()})`, '#fbbf24'));
+    ctx.onclick = null;
+    ctx.style.cursor = 'default';
+  }else{
+    // default: PR count per month across all exercises
+    $('#prChartTitle').textContent = 'PR Improvements';
+    const byMonth = {};
+    sorted.forEach(p=>{
+      const m = p.date.slice(0,7);
+      byMonth[m] = (byMonth[m]||0)+1;
+    });
+    const months = Object.keys(byMonth).sort().slice(-8);
+    prChartInst = new Chart(ctx, barChartConfig(months.map(m=>{
+      const [y,mo] = m.split('-'); return new Date(y,mo-1,1).toLocaleDateString(undefined,{month:'short',year:'2-digit'});
+    }), months.map(m=>byMonth[m]), 'PRs', '#fbbf24'));
+  }
 }
 
 /* ============================================================
