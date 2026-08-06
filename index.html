@@ -101,11 +101,11 @@
       <div class="grid two-col">
         <div class="card chart-card">
           <div class="card-head"><h3>Weight Trend</h3><span class="muted" id="weightTrendRange">Last 30 entries</span></div>
-          <canvas id="dashWeightChart" height="160"></canvas>
+          <div style="position:relative;height:160px;"><canvas id="dashWeightChart"></canvas></div>
         </div>
         <div class="card chart-card">
           <div class="card-head"><h3>Weekly Workout Summary</h3><span class="muted" id="weekRangeLabel"></span></div>
-          <canvas id="weeklySummaryChart" height="160"></canvas>
+          <div style="position:relative;height:160px;"><canvas id="weeklySummaryChart"></canvas></div>
         </div>
       </div>
 
@@ -163,8 +163,14 @@
 
     <!-- ============ PR TRACKER ============ -->
     <section class="page" id="page-pr">
+      <div class="toolbar">
+        <div class="field grow">
+          <label>View Trend For</label>
+          <select id="prExerciseSelect"><option value="">All Exercises (PR count)</option></select>
+        </div>
+      </div>
       <div class="grid two-col">
-        <div class="card"><div class="card-head"><h3>PR Improvements</h3></div><canvas id="prChart" height="180"></canvas></div>
+        <div class="card chart-card"><div class="card-head"><h3 id="prChartTitle">PR Improvements</h3></div><div style="position:relative;height:230px;"><canvas id="prChart"></canvas></div></div>
         <div class="card"><div class="card-head"><h3>Latest Records</h3></div><div id="prLatestList" class="activity-list"></div></div>
       </div>
       <div class="card">
@@ -184,8 +190,8 @@
         </div>
       </div>
       <div class="grid two-col">
-        <div class="card"><div class="card-head"><h3>Weight Over Time</h3></div><canvas id="overloadWeightChart" height="180"></canvas></div>
-        <div class="card"><div class="card-head"><h3>Volume Over Time</h3></div><canvas id="overloadVolumeChart" height="180"></canvas></div>
+        <div class="card"><div class="card-head"><h3>Weight Over Time</h3></div><div style="position:relative;height:180px;"><canvas id="overloadWeightChart"></canvas></div></div>
+        <div class="card"><div class="card-head"><h3>Volume Over Time</h3></div><div style="position:relative;height:180px;"><canvas id="overloadVolumeChart"></canvas></div></div>
       </div>
       <div class="card">
         <div class="card-head"><h3>Session Comparison</h3></div>
@@ -210,7 +216,7 @@
       </div>
       <div class="card">
         <div class="card-head"><h3>Trend</h3><span class="muted" id="bwMonthAvg"></span></div>
-        <canvas id="bwChart" height="170"></canvas>
+        <div style="position:relative;height:170px;"><canvas id="bwChart"></canvas></div>
       </div>
       <div class="card">
         <div class="card-head"><h3>Log Entry</h3></div>
@@ -311,16 +317,16 @@
     <!-- ============ STATISTICS ============ -->
     <section class="page" id="page-stats">
       <div class="grid two-col">
-        <div class="card"><div class="card-head"><h3>Weight Progress</h3></div><canvas id="statWeightChart" height="180"></canvas></div>
-        <div class="card"><div class="card-head"><h3>Calories (14 days)</h3></div><canvas id="statCalorieChart" height="180"></canvas></div>
+        <div class="card"><div class="card-head"><h3>Weight Progress</h3></div><div style="position:relative;height:180px;"><canvas id="statWeightChart"></canvas></div></div>
+        <div class="card"><div class="card-head"><h3>Calories (14 days)</h3></div><div style="position:relative;height:180px;"><canvas id="statCalorieChart"></canvas></div></div>
       </div>
       <div class="grid two-col">
-        <div class="card"><div class="card-head"><h3>Workout Volume</h3></div><canvas id="statVolumeChart" height="180"></canvas></div>
-        <div class="card"><div class="card-head"><h3>Exercise Frequency</h3></div><canvas id="statFreqChart" height="180"></canvas></div>
+        <div class="card"><div class="card-head"><h3>Workout Volume</h3></div><div style="position:relative;height:180px;"><canvas id="statVolumeChart"></canvas></div></div>
+        <div class="card"><div class="card-head"><h3>Exercise Frequency</h3></div><div style="position:relative;height:180px;"><canvas id="statFreqChart"></canvas></div></div>
       </div>
       <div class="grid two-col">
-        <div class="card"><div class="card-head"><h3>PR Improvements</h3></div><canvas id="statPRChart" height="180"></canvas></div>
-        <div class="card"><div class="card-head"><h3>Weekly Consistency</h3></div><canvas id="statConsistencyChart" height="180"></canvas></div>
+        <div class="card"><div class="card-head"><h3>PR Improvements</h3></div><div style="position:relative;height:180px;"><canvas id="statPRChart"></canvas></div></div>
+        <div class="card"><div class="card-head"><h3>Weekly Consistency</h3></div><div style="position:relative;height:180px;"><canvas id="statConsistencyChart"></canvas></div></div>
       </div>
     </section>
 
@@ -385,7 +391,7 @@
             <div class="field"><label>Hours Slept</label><input type="number" step="0.25" id="sleepHours" placeholder="7.5"></div>
             <button class="btn btn-primary" id="saveSleepBtn"><i data-ic="plus"></i> Log</button>
           </div>
-          <canvas id="sleepChart" height="140"></canvas>
+          <div style="position:relative;height:140px;"><canvas id="sleepChart"></canvas></div>
         </div>
       </div>
     </section>
