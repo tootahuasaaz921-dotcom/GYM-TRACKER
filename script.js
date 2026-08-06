@@ -542,169 +542,49 @@ function populateExerciseSelects(){
 /* ============================================================
    9. WORKOUT TRACKER
    ============================================================ */
-// working draft of the workout currently being built
-let workoutDraft = { exercises: [] }; // [{exerciseId, exerciseName, sets:[{weight,reps,rpe,notes}]}]
-
-function renderWorkoutPage(){
-  $('#workoutDate').value = $('#workoutDate').value || todayISO();
-  populateExerciseSelects();
-  renderWorkoutExerciseList();
-  updateWorkoutSummary();
-}
-
-$('#addWorkoutExerciseBtn').addEventListener('click', ()=>{
-  const sel = $('#workoutExerciseSelect');
-  const exId = sel.value;
-  if(!exId){ toast('Choose an exercise first','error'); return; }
-  if(workoutDraft.exercises.find(e=>e.exerciseId===exId)){ toast('Exercise already added','error'); return; }
-  const ex = store.exercises.find(e=>e.id===exId);
-  workoutDraft.exercises.push({exerciseId:exId, exerciseName:ex.name, sets:[{weight:'',reps:'',rpe:'',notes:''}]});
-  sel.value='';
-  renderWorkoutExerciseList();
-});
-
-function renderWorkoutExerciseList(){
-  const wrap = $('#workoutExerciseList');
-  if(workoutDraft.exercises.length===0){
-    wrap.innerHTML = `<div class="empty-state">No exercises added yet. Pick one above to start logging sets.</div>`;
-    return;
-  }
-  wrap.innerHTML = workoutDraft.exercises.map((blk, bi)=>`
-    <div class="we-block" data-bi="${bi}">
-      <div class="we-head">
-        <b>${escapeHtml(blk.exerciseName)}</b>
-        <button class="remove-ex" data-remove-ex="${bi}" title="Remove exercise"><i data-ic="x"></i></button>
-      </div>
-      <div class="we-sets">
-        ${blk.sets.map((s,si)=>`
-          <div class="set-row" data-si="${si}">
-            <span class="set-num">${si+1}</span>
-            <input type="number" step="0.5" placeholder="Weight (${unitLabel()})" value="${s.weight}" data-field="weight" data-bi="${bi}" data-si="${si}">
-            <input type="number" placeholder="Reps" value="${s.reps}" data-field="reps" data-bi="${bi}" data-si="${si}">
-            <input type="number" step="0.5" placeholder="RPE" value="${s.rpe}" data-field="rpe" data-bi="${bi}" data-si="${si}" min="1" max="10">
-            <input type="text" placeholder="Set notes" value="${escapeHtml(s.notes)}" data-field="notes" data-bi="${bi}" data-si="${si}">
-            <button class="remove-set" data-remove-set="${bi}:${si}" title="Remove set"><i data-ic="x"></i></button>
-          </div>`).join('')}
-      </div>
-      <button class="add-set-btn" data-add-set="${bi}">+ Add Set</button>
-    </div>`).join('');
-  renderIcons(wrap);
-
-  $$('[data-field]', wrap).forEach(inp=> inp.addEventListener('input', e=>{
-    const bi=+e.target.dataset.bi, si=+e.target.dataset.si, field=e.target.dataset.field;
-    workoutDraft.exercises[bi].sets[si][field] = e.target.value;
-    updateWorkoutSummary();
-  }));
-  $$('[data-add-set]', wrap).forEach(b=> b.addEventListener('click', ()=>{
-    const bi=+b.dataset.addSet;
-    workoutDraft.exercises[bi].sets.push({weight:'',reps:'',rpe:'',notes:''});
-    renderWorkoutExerciseList();
-  }));
-  $$('[data-remove-set]', wrap).forEach(b=> b.addEventListener('click', ()=>{
-    const [bi,si] = b.dataset.removeSet.split(':').map(Number);
-    workoutDraft.exercises[bi].sets.splice(si,1);
-    if(workoutDraft.exercises[bi].sets.length===0) workoutDraft.exercises[bi].sets.push({weight:'',reps:'',rpe:'',notes:''});
-    renderWorkoutExerciseList(); updateWorkoutSummary();
-  }));
-  $$('[data-remove-ex]', wrap).forEach(b=> b.addEventListener('click', ()=>{
-    workoutDraft.exercises.splice(+b.dataset.removeEx,1);
-    renderWorkoutExerciseList(); updateWorkoutSummary();
-  }));
-}
-
-function computeBlockStats(blk){
-  let volume=0, maxWeight=0, bestOneRM=0;
-  blk.sets.forEach(s=>{
-    const w = toStoreWeight(s.weight), r = parseFloat(s.reps)||0;
-    if(w>0 && r>0){
-      volume += w*r;
-      if(w>maxWeight) maxWeight = w;
-      const orm = est1RM(w,r);
-      if(orm>bestOneRM) bestOneRM = orm;
-    }
-  });
-  return {volume, maxWeight, bestOneRM};
-}
-
-function updateWorkoutSummary(){
-  let totalVolume=0, topWeight=0, bestOneRM=0;
-  workoutDraft.exercises.forEach(blk=>{
-    const s = computeBlockStats(blk);
-    totalVolume += s.volume;
-    if(s.maxWeight>topWeight) topWeight=s.maxWeight;
-    if(s.bestOneRM>bestOneRM) bestOneRM=s.bestOneRM;
-  });
-  $('#wSumVolume').textContent = `${round0(toDisplayWeight(totalVolume))} ${unitLabel()}`;
-  $('#wSumTop').textContent = `${round1(toDisplayWeight(topWeight))} ${unitLabel()}`;
-  $('#wSumOneRM').textContent = `${round1(toDisplayWeight(bestOneRM))} ${unitLabel()}`;
-}
-
-$('#saveWorkoutBtn').addEventListener('click', ()=>{
-  const date = $('#workoutDate').value || todayISO();
-  const validExercises = workoutDraft.exercises.filter(blk=> blk.sets.some(s=> toStoreWeight(s.weight)>0 && parseFloat(s.reps)>0));
-  if(validExercises.length===0){ toast('Add at least one set with weight and reps','error'); return; }
-
-  const exercisesToSave = validExercises.map(blk=>{
-    const cleanSets = blk.sets
-      .filter(s=> toStoreWeight(s.weight)>0 && parseFloat(s.reps)>0)
-      .map(s=> ({weight:toStoreWeight(s.weight), reps:parseFloat(s.reps)||0, rpe:s.rpe?parseFloat(s.rpe):null, notes:s.notes||''}));
-    const stats = computeBlockStats({sets: cleanSets.map(s=>({weight:toDisplayWeight(s.weight), reps:s.reps}))});
-    // recompute directly in kg to avoid double conversion
-    let volume=0,maxWeight=0,bestOneRM=0;
-    cleanSets.forEach(s=>{ volume+=s.weight*s.reps; if(s.weight>maxWeight)maxWeight=s.weight; const o=est1RM(s.weight,s.reps); if(o>bestOneRM)bestOneRM=o; });
-    return {exerciseId:blk.exerciseId, exerciseName:blk.exerciseName, sets:cleanSets, volume, maxWeight, est1RM:bestOneRM};
-  });
-
-  const workout = {id:uid(), date, notes:$('#workoutNotes').value.trim(), exercises:exercisesToSave};
-  store.workouts.push(workout);
-  save();
-
-  // PR detection per exercise
-  exercisesToSave.forEach(blk=> detectAndRecordPR(blk, date, workout.id));
-
-  save();
-  workoutDraft = {exercises:[]};
-  $('#workoutNotes').value='';
-  renderWorkoutExerciseList();
-  updateWorkoutSummary();
-  toast('Workout saved');
-  renderDashboard();
-});
-
-function detectAndRecordPR(blk, date, excludeWorkoutId){
-  // find previous best weight for this exercise across all workouts except the one just saved
-  let prevBest = 0, prevReps=0;
-  store.workouts.forEach(w=>{
-    if(w.id===excludeWorkoutId) return;
-    w.exercises.forEach(e=>{
-      if(e.exerciseId!==blk.exerciseId) return;
-      e.sets.forEach(s=>{
-        if(s.weight>prevBest){ prevBest=s.weight; prevReps=s.reps; }
-      });
-    });
-  });
-  if(blk.maxWeight>prevBest){
-    const bestSet = blk.sets.reduce((a,b)=> b.weight>a.weight?b:a, blk.sets[0]);
-    store.prs.push({
-      id:uid(), exerciseId:blk.exerciseId, exerciseName:blk.exerciseName,
-      previous: prevBest, newPR: blk.maxWeight, reps: bestSet.reps, date
-    });
-    toast(`New PR! ${blk.exerciseName}: ${round1(toDisplayWeight(blk.maxWeight))} ${unitLabel()}`, 'pr');
-  }
-}
-
-
-/* ============================================================
-   9. WORKOUT TRACKER
-   ============================================================ */
 let currentWorkoutDraft = { exercises: [] }; // {exerciseId,exerciseName,sets:[{weight,reps,rpe,notes}]}
+let currentWorkoutDraftDate = null; // tracks which date's saved workout (if any) is currently loaded into the draft
+
+// Loads a previously-saved workout for the given date into the draft so it stays
+// visible in the Workout Tracker (not just in PR/History). If nothing was saved
+// for that date yet, the draft is cleared so a fresh one can be built.
+function loadWorkoutForDate(date){
+  const existing = store.workouts.find(w=>w.date===date);
+  if(existing){
+    currentWorkoutDraft = {
+      exercises: existing.exercises.map(e=>({
+        exerciseId: e.exerciseId,
+        exerciseName: e.exerciseName,
+        sets: e.sets.map(s=>({
+          weight: toDisplayWeight(s.weight),
+          reps: s.reps,
+          rpe: s.rpe==null ? '' : s.rpe,
+          notes: s.notes||''
+        }))
+      }))
+    };
+    $('#workoutNotes').value = existing.notes||'';
+  }else{
+    currentWorkoutDraft = { exercises: [] };
+    $('#workoutNotes').value='';
+  }
+  currentWorkoutDraftDate = date;
+}
 
 function renderWorkoutPage(){
   populateExerciseSelects();
   if(!$('#workoutDate').value) $('#workoutDate').value = todayISO();
+  const date = $('#workoutDate').value;
+  if(currentWorkoutDraftDate !== date) loadWorkoutForDate(date);
   renderWorkoutExerciseList();
   updateWorkoutSummaryBar();
 }
+
+$('#workoutDate').addEventListener('change', ()=>{
+  loadWorkoutForDate($('#workoutDate').value || todayISO());
+  renderWorkoutExerciseList();
+  updateWorkoutSummaryBar();
+});
 
 $('#addWorkoutExerciseBtn').addEventListener('click', ()=>{
   const sel = $('#workoutExerciseSelect');
@@ -796,6 +676,13 @@ $('#saveWorkoutBtn').addEventListener('click', ()=>{
   const date = $('#workoutDate').value || todayISO();
   const notes = $('#workoutNotes').value.trim();
 
+  // If a workout already exists for this date, we update it in place instead of
+  // creating a duplicate — that existing entry's id is reused, and its own numbers
+  // are excluded from the "prior best" PR comparison so re-saving the same day
+  // doesn't falsely trigger (or duplicate) a PR.
+  const existingWorkout = store.workouts.find(w=>w.date===date);
+  const existingId = existingWorkout ? existingWorkout.id : null;
+
   const finalExercises = [];
   const newPRs = [];
 
@@ -820,8 +707,12 @@ $('#saveWorkoutBtn').addEventListener('click', ()=>{
       sets: validSets, volume, maxWeight, est1RM: oneRM
     });
 
-    // PR detection — compare against best weight ever recorded for this exercise (prior to this save)
-    const priorMax = getPriorMaxWeight(blk.exerciseId);
+    // remove any PR previously recorded for this exact exercise+date (avoids duplicates on re-save)
+    store.prs = store.prs.filter(p=> !(p.exerciseId===blk.exerciseId && p.date===date));
+
+    // PR detection — compare against best weight ever recorded for this exercise,
+    // excluding the workout we're currently overwriting
+    const priorMax = getPriorMaxWeight(blk.exerciseId, existingId);
     if(maxWeight > priorMax){
       const prSet = validSets.find(s=>s.weight===maxWeight);
       const pr = {
@@ -835,21 +726,28 @@ $('#saveWorkoutBtn').addEventListener('click', ()=>{
 
   if(finalExercises.length===0){ toast('Please fill in at least one set with weight or reps','error'); return; }
 
-  store.workouts.push({ id: uid(), date, notes, exercises: finalExercises });
+  if(existingWorkout){
+    existingWorkout.notes = notes;
+    existingWorkout.exercises = finalExercises;
+  }else{
+    store.workouts.push({ id: uid(), date, notes, exercises: finalExercises });
+  }
   save();
 
-  currentWorkoutDraft = { exercises: [] };
-  $('#workoutNotes').value='';
+  // Keep everything visible in the Workout Tracker itself — reload straight from
+  // what was just saved instead of clearing the form.
+  loadWorkoutForDate(date);
   renderWorkoutExerciseList();
   updateWorkoutSummaryBar();
 
-  toast('Workout saved successfully');
+  toast(existingWorkout ? 'Workout updated' : 'Workout saved successfully');
   newPRs.forEach(pr=> setTimeout(()=> toast(`New PR! ${pr.exerciseName}: ${round1(toDisplayWeight(pr.newPR))} ${unitLabel()}`, 'pr'), 300));
 });
 
-function getPriorMaxWeight(exerciseId){
+function getPriorMaxWeight(exerciseId, excludeWorkoutId=null){
   let max = 0;
   store.workouts.forEach(w=>{
+    if(w.id===excludeWorkoutId) return;
     w.exercises.forEach(e=>{
       if(e.exerciseId===exerciseId && e.maxWeight>max) max=e.maxWeight;
     });
